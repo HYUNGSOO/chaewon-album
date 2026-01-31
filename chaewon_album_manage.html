@@ -581,10 +581,8 @@
                 
                 const fileId = fileIdMatch[1];
                 
-                // Use public thumbnail URL (doesn't require auth if file is publicly shared)
-                const publicUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
-                
-                // Cache and return
+                // Use direct public download link
+                const publicUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
                 imageUrlCache[driveUrl] = publicUrl;
                 return publicUrl;
             } catch (e) {
