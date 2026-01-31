@@ -572,19 +572,50 @@
             }
             
             try {
-                // Extract file ID from Drive URL
-                const fileIdMatch = driveUrl.match(/\/files\/([^/?]+)/);
-                if (!fileIdMatch) {
+                // Extract file ID from Drive URL (supports multiple formats)
+                let fileId = null;
+                
+                // Format 1: https://www.googleapis.com/drive/v3/files/FILE_ID?alt=media
+                const apiMatch = driveUrl.match(/\/files\/([^/?]+)/);
+                if (apiMatch) {
+                    fileId = apiMatch[1];
+                }
+                
+                // Format 2: https://drive.google.com/file/d/FILE_ID/view
+                const driveMatch = driveUrl.match(/\/d\/([^/?]+)/);
+                if (!fileId && driveMatch) {
+                    fileId = driveMatch[1];
+                }
+                
+                if (!fileId) {
                     console.error('Invalid Drive URL:', driveUrl);
                     return null;
                 }
                 
-                const fileId = fileIdMatch[1];
-                
                 // Use direct public download link
                 const publicUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+                
+                // Fetch and convert to blob to bypass CORS
+                try {
+                    const response = await fetch(publicUrl, { 
+                        mode: 'cors',
+                        credentials: 'omit'
+                    });
+                    
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const blobUrl = URL.createObjectURL(blob);
+                        imageUrlCache[driveUrl] = blobUrl;
+                        return blobUrl;
+                    }
+                } catch (fetchError) {
+                    console.log('Fetch 실패, 직접 URL 사용:', fetchError);
+                }
+                
+                // Fallback: Just use the URL directly
                 imageUrlCache[driveUrl] = publicUrl;
                 return publicUrl;
+                
             } catch (e) {
                 console.error('이미지 URL 변환 실패:', e);
                 return null;
