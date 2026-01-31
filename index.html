@@ -1689,24 +1689,10 @@
                 
                 const fileId = fileIdMatch[1];
                 
-                // Get file metadata to get webContentLink
-                const metadataUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?fields=webContentLink,thumbnailLink&key=AIzaSyDummyKeyForNow`;
-                
-                try {
-                    const metaResponse = await fetch(metadataUrl);
-                    if (metaResponse.ok) {
-                        const metadata = await metaResponse.json();
-                        const publicUrl = metadata.thumbnailLink?.replace('=s220', '=s1000') || 
-                                        `https://drive.google.com/uc?export=view&id=${fileId}`;
-                        imageUrlCache[driveUrl] = publicUrl;
-                        return publicUrl;
-                    }
-                } catch (apiError) {
-                    console.log('API 호출 실패, 대체 URL 사용');
-                }
-                
-                // Fallback: Use direct public link
+                // Use direct public download link (works if file is publicly shared)
                 const publicUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+                
+                // Cache and return
                 imageUrlCache[driveUrl] = publicUrl;
                 return publicUrl;
             } catch (e) {
