@@ -854,7 +854,7 @@
                 div.addEventListener('dragleave', handleDragLeave);
                 
                 const thumbnail = item.type === 'image'
-                    ? `<img src="${mediaSrc}" class="list-thumbnail" alt="썸네일">`
+                    ? `<img src="${mediaSrc}" class="list-thumbnail" alt="썸네일" referrerpolicy="no-referrer" crossorigin="anonymous">`
                     : `<video src="${mediaSrc}" class="list-thumbnail"></video>`;
                 
                 div.innerHTML = `
@@ -918,7 +918,7 @@
                 div.addEventListener('dragleave', handleDragLeave);
                 
                 const mediaElement = item.type === 'image'
-                    ? `<img src="${mediaSrc}" class="grid-thumbnail" alt="채원이 사진">`
+                    ? `<img src="${mediaSrc}" class="grid-thumbnail" alt="채원이 사진" referrerpolicy="no-referrer" crossorigin="anonymous">`
                     : `<video src="${mediaSrc}" class="grid-thumbnail" controls></video>`;
                 
                 div.innerHTML = `

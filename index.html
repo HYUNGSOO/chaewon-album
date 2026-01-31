@@ -1743,7 +1743,7 @@
                 }
 
                 const mediaElement = item.type === 'image'
-                    ? `<img src="${mediaSrc}" alt="채원이 사진">`
+                    ? `<img src="${mediaSrc}" alt="채원이 사진" referrerpolicy="no-referrer" crossorigin="anonymous">`
                     : `<video src="${mediaSrc}" controls></video>`;
                 
                 div.innerHTML = `
@@ -2215,6 +2215,8 @@
                 
                 const img = document.createElement('img');
                 img.alt = `채원이 사진 ${index + 1}`;
+                img.referrerPolicy = 'no-referrer';
+                img.crossOrigin = 'anonymous';
 
                 if (accessToken && image.data && image.data.startsWith('https://')) {
                     img.src = await getAuthedImageUrl(image.data) || '';
