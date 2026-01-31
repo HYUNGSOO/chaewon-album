@@ -624,21 +624,39 @@
         async function loadConfigFile() {
             try {
                 const response = await fetch(
-                    `https://www.googleapis.com/drive/v3/files?q=name='chaewon_config.json' and '${GOOGLE_FOLDER_ID}' in parents&fields=files(id)`,
+                    `https://www.googleapis.com/drive/v3/files?q=name='chaewon_config.json' and '${GOOGLE_FOLDER_ID}' in parents&fields=files(id,createdTime)&orderBy=createdTime`,
                     { headers: { 'Authorization': `Bearer ${accessToken}` } }
                 );
                 
                 const data = await response.json();
                 
                 if (data.files && data.files.length > 0) {
-                    const fileId = data.files[0].id;
-                    const fileResponse = await fetch(
-                        `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
-                        { headers: { 'Authorization': `Bearer ${accessToken}` } }
-                    );
+                    let mergedGalleryMeta = [];
                     
-                    const config = await fileResponse.json();
-                    return config.galleryMetadata || [];
+                    // Merge all config files
+                    for (const file of data.files) {
+                        try {
+                            const fileResponse = await fetch(
+                                `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`,
+                                { headers: { 'Authorization': `Bearer ${accessToken}` } }
+                            );
+                            
+                            const config = await fileResponse.json();
+                            
+                            if (config.galleryMetadata && Array.isArray(config.galleryMetadata)) {
+                                config.galleryMetadata.forEach(meta => {
+                                    if (!mergedGalleryMeta.find(m => m.driveId === meta.driveId)) {
+                                        mergedGalleryMeta.push(meta);
+                                    }
+                                });
+                            }
+                        } catch (err) {
+                            console.warn('Config 읽기 실패:', err);
+                        }
+                    }
+                    
+                    console.log(`${data.files.length}개의 config 파일 병합`);
+                    return mergedGalleryMeta;
                 }
             } catch (error) {
                 console.log('설정 파일 없음');
