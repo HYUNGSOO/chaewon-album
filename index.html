@@ -1549,7 +1549,30 @@
                     throw new Error('업로드 실패: ' + response.status + ' - ' + errorText);
                 }
                 
-                return await response.json();
+                const uploadedFile = await response.json();
+                
+                // Automatically share the uploaded file with "anyone with the link"
+                try {
+                    await fetch(
+                        `https://www.googleapis.com/drive/v3/files/${uploadedFile.id}/permissions`,
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${accessToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                type: 'anyone',
+                                role: 'reader'
+                            })
+                        }
+                    );
+                    console.log('파일 공유 설정 완료:', uploadedFile.name);
+                } catch (permError) {
+                    console.warn('공유 설정 실패 (파일은 업로드됨):', permError);
+                }
+                
+                return uploadedFile;
             } catch (error) {
                 console.error('Google Drive 업로드 오류:', error);
                 alert('파일 업로드에 실패했습니다.\n\n오류: ' + error.message + '\n\n구글 드라이브 폴더 권한을 확인해주세요.');

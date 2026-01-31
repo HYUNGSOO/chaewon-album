@@ -1144,7 +1144,30 @@
                 
                 if (!response.ok) throw new Error('업로드 실패');
                 
-                return await response.json();
+                const uploadedFile = await response.json();
+                
+                // Automatically share the uploaded file
+                try {
+                    await fetch(
+                        `https://www.googleapis.com/drive/v3/files/${uploadedFile.id}/permissions`,
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${accessToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                type: 'anyone',
+                                role: 'reader'
+                            })
+                        }
+                    );
+                    console.log('파일 공유 설정 완료:', uploadedFile.name);
+                } catch (permError) {
+                    console.warn('공유 설정 실패 (파일은 업로드됨):', permError);
+                }
+                
+                return uploadedFile;
             } catch (error) {
                 console.error('업로드 실패:', error);
                 throw error;
