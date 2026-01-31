@@ -1680,18 +1680,23 @@
             }
             
             try {
-                const response = await fetch(driveUrl, {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                });
-                const blob = await response.blob();
-                const url = URL.createObjectURL(blob);
+                // Extract file ID from Drive URL
+                const fileIdMatch = driveUrl.match(/\/files\/([^/?]+)/);
+                if (!fileIdMatch) {
+                    console.error('Invalid Drive URL:', driveUrl);
+                    return null;
+                }
                 
-                // Cache the result
-                imageUrlCache[driveUrl] = url;
+                const fileId = fileIdMatch[1];
                 
-                return url;
+                // Use public thumbnail URL (doesn't require auth if file is publicly shared)
+                const publicUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+                
+                // Cache and return
+                imageUrlCache[driveUrl] = publicUrl;
+                return publicUrl;
             } catch (e) {
-                console.error('이미지 로드 실패:', e);
+                console.error('이미지 URL 변환 실패:', e);
                 return null;
             }
         }
