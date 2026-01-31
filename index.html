@@ -1700,12 +1700,16 @@
                     return null;
                 }
                 
-                // Use direct public download link (img tag can load this directly without fetch)
-                const publicUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+                // Try multiple URL formats
+                // Format 1: Direct download link
+                const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
                 
-                // Cache and return the URL directly
-                imageUrlCache[driveUrl] = publicUrl;
-                return publicUrl;
+                // Format 2: Thumbnail (more reliable for embedding)
+                const thumbnailUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`;
+                
+                // Use thumbnail URL (works better for external embedding)
+                imageUrlCache[driveUrl] = thumbnailUrl;
+                return thumbnailUrl;
                 
             } catch (e) {
                 console.error('이미지 URL 변환 실패:', e);
@@ -1743,7 +1747,7 @@
                 }
 
                 const mediaElement = item.type === 'image'
-                    ? `<img src="${mediaSrc}" alt="채원이 사진" referrerpolicy="no-referrer" crossorigin="anonymous">`
+                    ? `<img src="${mediaSrc}" alt="채원이 사진" referrerpolicy="no-referrer">`
                     : `<video src="${mediaSrc}" controls></video>`;
                 
                 div.innerHTML = `
@@ -2216,7 +2220,6 @@
                 const img = document.createElement('img');
                 img.alt = `채원이 사진 ${index + 1}`;
                 img.referrerPolicy = 'no-referrer';
-                img.crossOrigin = 'anonymous';
 
                 if (accessToken && image.data && image.data.startsWith('https://')) {
                     img.src = await getAuthedImageUrl(image.data) || '';

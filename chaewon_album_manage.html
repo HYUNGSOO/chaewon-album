@@ -592,12 +592,11 @@
                     return null;
                 }
                 
-                // Use direct public download link (img tag can load this directly without fetch)
-                const publicUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+                // Use thumbnail URL (works better for external embedding)
+                const thumbnailUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`;
                 
-                // Cache and return the URL directly
-                imageUrlCache[driveUrl] = publicUrl;
-                return publicUrl;
+                imageUrlCache[driveUrl] = thumbnailUrl;
+                return thumbnailUrl;
                 
             } catch (e) {
                 console.error('이미지 URL 변환 실패:', e);
@@ -854,7 +853,7 @@
                 div.addEventListener('dragleave', handleDragLeave);
                 
                 const thumbnail = item.type === 'image'
-                    ? `<img src="${mediaSrc}" class="list-thumbnail" alt="썸네일" referrerpolicy="no-referrer" crossorigin="anonymous">`
+                    ? `<img src="${mediaSrc}" class="list-thumbnail" alt="썸네일" referrerpolicy="no-referrer">`
                     : `<video src="${mediaSrc}" class="list-thumbnail"></video>`;
                 
                 div.innerHTML = `
@@ -918,7 +917,7 @@
                 div.addEventListener('dragleave', handleDragLeave);
                 
                 const mediaElement = item.type === 'image'
-                    ? `<img src="${mediaSrc}" class="grid-thumbnail" alt="채원이 사진" referrerpolicy="no-referrer" crossorigin="anonymous">`
+                    ? `<img src="${mediaSrc}" class="grid-thumbnail" alt="채원이 사진" referrerpolicy="no-referrer">`
                     : `<video src="${mediaSrc}" class="grid-thumbnail" controls></video>`;
                 
                 div.innerHTML = `
