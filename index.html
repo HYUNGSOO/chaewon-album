@@ -1207,6 +1207,31 @@
         </div>
     </div>
 
+    <!-- Gallery Upload Modal -->
+    <div id="galleryUploadModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title">사진 정보 입력</h3>
+            <div class="modal-form">
+                <div>
+                    <label>파일 이름</label>
+                    <input type="text" id="uploadFileName" readonly style="background: #f5f5f5;">
+                </div>
+                <div>
+                    <label>날짜</label>
+                    <input type="date" id="uploadDate">
+                </div>
+                <div>
+                    <label>제목/설명</label>
+                    <input type="text" id="uploadCaption" placeholder="사진 제목이나 설명을 입력하세요...">
+                </div>
+                <div class="modal-buttons">
+                    <button class="modal-btn modal-btn-secondary" onclick="cancelUpload()">취소</button>
+                    <button class="modal-btn modal-btn-primary" onclick="confirmUpload()">업로드</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ==========================================
         // Google Drive 설정 - 여기에 입력하세요!
@@ -1679,73 +1704,160 @@
         }
 
         // File upload handler
+        let pendingFiles = [];
+        let currentFileIndex = 0;
+        let uploadedCount = 0;
+        let failedCount = 0;
+
         document.getElementById('fileInput').addEventListener('change', async function(e) {
             const files = e.target.files;
             if (!files || files.length === 0) return;
             
-            document.getElementById('galleryLoading').style.display = 'block';
+            // Reset counters
+            pendingFiles = Array.from(files);
+            currentFileIndex = 0;
+            uploadedCount = 0;
+            failedCount = 0;
             
-            let successCount = 0;
-            let failCount = 0;
-            
-            for (let file of files) {
-                try {
-                    console.log(`처리 중: ${file.name}, 타입: ${file.type}, 크기: ${file.size}`);
-                    
-                    // Check if it's an image
-                    if (!file.type || !file.type.startsWith('image/')) {
-                        // Try to detect image by file extension
-                        const ext = file.name.split('.').pop().toLowerCase();
-                        if (!['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'].includes(ext)) {
-                            console.warn(`이미지가 아님: ${file.name}`);
-                            failCount++;
-                            continue;
-                        }
-                    }
-                    
-                    // HEIC/HEIF files need special handling
-                    if (file.type === 'image/heic' || file.type === 'image/heif' || 
-                        file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
-                        alert(`${file.name}은 HEIC 형식입니다.\n\n설정 > 카메라 > 포맷에서 "호환성 우선"으로 변경하거나,\n사진을 JPG로 변환해주세요.`);
-                        failCount++;
+            // Validate files first
+            const validFiles = [];
+            for (let file of pendingFiles) {
+                // Check if it's an image
+                if (!file.type || !file.type.startsWith('image/')) {
+                    const ext = file.name.split('.').pop().toLowerCase();
+                    if (!['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+                        console.warn(`이미지가 아님: ${file.name}`);
+                        failedCount++;
                         continue;
                     }
-                    
-                    const compressed = await compressImage(file);
-                    const uploadedFile = await uploadToGoogleDrive(file, compressed);
-                    
-                    galleryItems.unshift({
-                        id: uploadedFile.id,
-                        type: 'image',
-                        data: `https://www.googleapis.com/drive/v3/files/${uploadedFile.id}?alt=media`,
-                        date: uploadedFile.createdTime,
-                        caption: '',
-                        driveId: uploadedFile.id
-                    });
-                    
-                    successCount++;
-                    console.log(`✅ 업로드 성공: ${file.name}`);
-                    
-                } catch (error) {
-                    console.error(`❌ 업로드 실패: ${file.name}`, error);
-                    failCount++;
                 }
+                
+                // HEIC/HEIF check
+                if (file.type === 'image/heic' || file.type === 'image/heif' || 
+                    file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+                    alert(`${file.name}은 HEIC 형식입니다.\n\n설정 > 카메라 > 포맷에서 "호환성 우선"으로 변경해주세요.`);
+                    failedCount++;
+                    continue;
+                }
+                
+                validFiles.push(file);
             }
             
-            document.getElementById('galleryLoading').style.display = 'none';
+            pendingFiles = validFiles;
             
-            if (successCount > 0) {
-                renderGallery(1);
-                renderSlideshow();
+            if (pendingFiles.length === 0) {
+                alert('업로드 가능한 이미지가 없습니다.');
+                e.target.value = '';
+                return;
             }
             
-            if (failCount > 0) {
-                alert(`업로드 결과:\n✅ 성공: ${successCount}개\n❌ 실패: ${failCount}개\n\n실패한 파일은 JPG/PNG 형식으로 변환하거나 파일 앱에서 선택해주세요.`);
-            }
+            // Show modal for first file
+            showUploadModal();
             
             // Clear the file input
             e.target.value = '';
         });
+
+        function showUploadModal() {
+            if (currentFileIndex >= pendingFiles.length) {
+                // All files processed
+                if (uploadedCount > 0) {
+                    renderGallery(1);
+                    renderSlideshow();
+                }
+                
+                if (failedCount > 0 || uploadedCount > 0) {
+                    alert(`업로드 완료!\n\n✅ 성공: ${uploadedCount}개\n❌ 실패: ${failedCount}개`);
+                }
+                return;
+            }
+            
+            const file = pendingFiles[currentFileIndex];
+            
+            // Set default values
+            document.getElementById('uploadFileName').value = file.name;
+            document.getElementById('uploadDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('uploadCaption').value = '';
+            
+            document.getElementById('galleryUploadModal').style.display = 'flex';
+        }
+
+        function cancelUpload() {
+            document.getElementById('galleryUploadModal').style.display = 'none';
+            
+            // Skip remaining files
+            const remaining = pendingFiles.length - currentFileIndex;
+            if (remaining > 1) {
+                if (confirm(`남은 ${remaining}개 파일도 모두 취소하시겠어요?`)) {
+                    pendingFiles = [];
+                    currentFileIndex = 0;
+                    
+                    if (uploadedCount > 0) {
+                        renderGallery(1);
+                        renderSlideshow();
+                        alert(`${uploadedCount}개 파일이 업로드되었습니다.`);
+                    }
+                } else {
+                    // Skip only current file
+                    currentFileIndex++;
+                    failedCount++;
+                    showUploadModal();
+                }
+            } else {
+                if (uploadedCount > 0) {
+                    renderGallery(1);
+                    renderSlideshow();
+                }
+            }
+        }
+
+        async function confirmUpload() {
+            const date = document.getElementById('uploadDate').value;
+            const caption = document.getElementById('uploadCaption').value;
+            
+            if (!date) {
+                alert('날짜를 입력해주세요!');
+                return;
+            }
+            
+            const file = pendingFiles[currentFileIndex];
+            
+            // Show loading
+            document.getElementById('galleryUploadModal').style.display = 'none';
+            document.getElementById('galleryLoading').style.display = 'block';
+            
+            try {
+                console.log(`업로드 중: ${file.name}`);
+                
+                const compressed = await compressImage(file);
+                const uploadedFile = await uploadToGoogleDrive(file, compressed);
+                
+                galleryItems.unshift({
+                    id: uploadedFile.id,
+                    type: 'image',
+                    data: `https://www.googleapis.com/drive/v3/files/${uploadedFile.id}?alt=media`,
+                    date: new Date(date).toISOString(),
+                    caption: caption,
+                    driveId: uploadedFile.id
+                });
+                
+                await saveGalleryMetadata();
+                
+                uploadedCount++;
+                console.log(`✅ 업로드 성공: ${file.name}`);
+                
+            } catch (error) {
+                console.error(`❌ 업로드 실패: ${file.name}`, error);
+                failedCount++;
+                alert(`업로드 실패: ${file.name}\n\n${error.message}`);
+            }
+            
+            document.getElementById('galleryLoading').style.display = 'none';
+            
+            // Move to next file
+            currentFileIndex++;
+            showUploadModal();
+        }
 
         // Render milestones
         async function renderMilestones() {
