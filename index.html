@@ -1106,7 +1106,7 @@
 
         <!-- Gallery Section -->
         <section id="gallery" class="gallery">
-            <h2 class="section-title">채원이 앨범</h2>
+            <h2 class="section-title">사진 & 동영상 앨범</h2>
             
             <div style="text-align: center; margin-bottom: 30px;">
                 <a href="chaewon_album_manage.html" target="_blank" style="display: inline-block; background: var(--accent-beige); color: white; padding: 15px 40px; border-radius: 15px; text-decoration: none; font-size: 1.1em; font-weight: 600; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
@@ -1140,7 +1140,7 @@
         <!-- Footer -->
         <footer>
             <p>💕 채원이와 함께하는 모든 순간이 소중합니다 💕</p>
-            <p>Made with Love | 엄마 ♡ 아빠</p>
+            <p>Made with Love | Google Drive로 안전하게 저장됩니다</p>
         </footer>
     </div>
 
@@ -1247,19 +1247,28 @@
         let accessToken = null;
         let tokenClient;
 
-        // Birth date
-        const birthDate = new Date('2025-09-30');
+        // Birth date (한국 시간 기준)
+        const birthDate = new Date('2025-09-30T00:00:00+09:00');
         
-        // Calculate days
+        // Calculate days (한국 시간 기준)
         function calculateDays() {
-            const today = new Date();
-            const diffTime = Math.abs(today - birthDate);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            // 현재 한국 시간 (UTC+9)
+            const now = new Date();
+            const koreaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+            
+            // 한국 시간 기준으로 날짜만 비교 (시간은 00:00:00으로 리셋)
+            const todayKorea = new Date(koreaTime.getFullYear(), koreaTime.getMonth(), koreaTime.getDate());
+            const birthKorea = new Date(birthDate.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+            
+            const diffTime = todayKorea - birthKorea;
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
             return diffDays;
         }
 
         // Update days counter
         document.getElementById('daysCount').textContent = calculateDays();
+
 
         // Milestones data
         const milestones = [
