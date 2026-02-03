@@ -1250,7 +1250,7 @@
         // Birth date (한국 시간 기준)
         const birthDate = new Date('2025-09-30T00:00:00+09:00');
         
-        // Calculate days (한국 시간 기준)
+        // Calculate days (한국 시간 기준, 출생일 = 1일)
         function calculateDays() {
             // 현재 한국 시간 (UTC+9)
             const now = new Date();
@@ -1263,7 +1263,8 @@
             const diffTime = todayKorea - birthKorea;
             const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
             
-            return diffDays;
+            // 출생일을 1일로 계산 (+1)
+            return diffDays + 1;
         }
 
         // Update days counter
@@ -1277,7 +1278,7 @@
             { name: '100일', days: 100, icon: '🎉' },
             { name: '200일', days: 200, icon: '🌟' },
             { name: '300일', days: 300, icon: '🎊' },
-            { name: '첫 돌', days: 365, icon: '🎂' }
+            { name: '첫 돌', days: 366, icon: '🎂' }
         ];
 
         // Storage for milestone photos and timeline
